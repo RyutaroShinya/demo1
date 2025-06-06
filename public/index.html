@@ -1,0 +1,160 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>株主総会Q&Aシミュレーター</title>
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>株主総会Q&Aシミュレーションシステム</h1>
+            <p>Shareholder Meeting Q&A Simulation System</p>
+        </header>
+
+        <!-- Document Upload Section -->
+        <section id="upload-section" class="section">
+            <h2>1. IR資料アップロード</h2>
+            <div class="upload-area">
+                <!-- New file upload -->
+                <div class="upload-subsection">
+                    <h3>新しいファイルをアップロード</h3>
+                    <input type="file" id="document-upload" multiple accept=".pdf,.docx,.doc,.txt" style="display: none;">
+                    <div class="upload-dropzone" onclick="document.getElementById('document-upload').click()">
+                        <div class="upload-icon">📄</div>
+                        <p>PDF、Word、テキスト形式のIR資料をドラッグ&ドロップまたはクリックしてアップロード</p>
+                        <small>決算資料、年次報告書など（最大50MB/ファイル）</small>
+                    </div>
+                </div>
+                
+                <!-- Existing documents selection -->
+                <div class="upload-subsection">
+                    <h3>既存の資料から選択</h3>
+                    <div class="existing-docs-container">
+                        <button id="load-existing-docs" class="btn btn-outline">既存資料を表示</button>
+                        <div id="existing-documents" class="existing-documents" style="display: none;"></div>
+                    </div>
+                </div>
+                
+                <div id="uploaded-files" class="uploaded-files"></div>
+            </div>
+        </section>
+
+        <!-- Generated FAQ Section -->
+        <section id="faq-section" class="section" style="display: none;">
+            <h2 id="faq-section-header" class="collapsible-header" onclick="toggleFAQSection()">
+                2. 自動生成された質問一覧
+                <span id="faq-toggle-icon" class="toggle-icon collapsed">▼</span>
+            </h2>
+            <div id="faq-content" class="faq-container collapsible-content collapsed">
+                <p class="faq-description">アップロードされた資料から株主の目線で想定される質問を自動生成しました。シミュレーションで使用したい質問を選択してください。</p>
+                <div class="faq-table-container">
+                    <table id="faq-table" class="faq-table">
+                        <thead>
+                            <tr>
+                                <th width="60">選択</th>
+                                <th width="60">番号</th>
+                                <th>質問内容</th>
+                            </tr>
+                        </thead>
+                        <tbody id="faq-table-body">
+                            <!-- FAQ questions will be populated here -->
+                        </tbody>
+                    </table>
+                </div>
+                <div class="faq-controls">
+                    <button id="select-all-faqs" class="btn btn-outline">全て選択</button>
+                    <button id="deselect-all-faqs" class="btn btn-outline">全て解除</button>
+                    <button id="regenerate-faqs" class="btn btn-outline">質問を再生成</button>
+                </div>
+                <div class="selected-count">
+                    選択中: <span id="selected-faq-count">0</span>件
+                </div>
+            </div>
+        </section>
+
+        <!-- Expected Questions Section -->
+        <section id="questions-section" class="section">
+            <h2>3. 想定質問入力（オプション）</h2>
+            <div class="questions-input">
+                <textarea id="expected-questions" 
+                         placeholder="株主から想定される質問を入力してください。複数の質問は改行で区切ってください。&#10;&#10;例：&#10;・今年度の業績が前年比で悪化している理由は？&#10;・新規事業の収益見通しはいかがですか？&#10;・配当政策の変更予定はありますか？"
+                         rows="8"></textarea>
+                <small>入力しない場合は、AI が資料から自動的に質問を生成します</small>
+            </div>
+        </section>
+
+        <!-- Simulation Control Section -->
+        <section id="control-section" class="section">
+            <h2>4. シミュレーション開始</h2>
+            <div class="control-buttons">
+                <button id="start-simulation" class="btn btn-primary" disabled>
+                    Q&Aシミュレーション開始
+                </button>
+                <button id="pause-simulation" class="btn btn-secondary" disabled>
+                    一時停止
+                </button>
+                <button id="next-question" class="btn btn-secondary" disabled>
+                    次の質問へ
+                </button>
+                <button id="end-simulation" class="btn btn-danger" disabled>
+                    終了
+                </button>
+            </div>
+            <div id="simulation-status" class="status-display">
+                まず IR資料をアップロードしてください
+            </div>
+        </section>
+
+        <!-- Chat Interface Section -->
+        <section id="chat-section" class="section" style="display: none;">
+            <h2>5. Q&A シミュレーション</h2>
+            <div class="chat-container">
+                <div id="chat-messages" class="chat-messages">
+                    <!-- Messages will be dynamically added here -->
+                </div>
+                <div class="chat-controls">
+                    <div class="simulation-info">
+                        <span id="session-id"></span>
+                        <span id="message-count">メッセージ: 0</span>
+                    </div>
+                    <button id="play-qa-sequence" class="btn btn-secondary" title="Q&Aを順番に再生">
+                        🔊 Q&A再生
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- Session History Section -->
+        <section id="history-section" class="section">
+            <h2>6. セッション履歴</h2>
+            <div class="session-history">
+                <div id="session-list" class="session-list">
+                    <!-- Past sessions will be listed here -->
+                </div>
+                <button id="load-sessions" class="btn btn-outline">履歴を読み込み</button>
+            </div>
+        </section>
+    </div>
+
+    <!-- Loading overlay -->
+    <div id="loading-overlay" class="loading-overlay" style="display: none;">
+        <div class="loading-spinner">
+            <div class="spinner"></div>
+            <p>処理中...</p>
+        </div>
+    </div>
+
+    <!-- Error modal -->
+    <div id="error-modal" class="modal" style="display: none;">
+        <div class="modal-content">
+            <span class="close">&times;</span>
+            <h3>エラー</h3>
+            <p id="error-message"></p>
+        </div>
+    </div>
+
+    <script src="js/app.js"></script>
+</body>
+</html>
